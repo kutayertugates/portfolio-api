@@ -9,7 +9,7 @@ use Firebase\JWT\Key;
  * JSON Web Token (JWT) management service.
  *
  * Handles JWT generation and verification using the HS256 signing algorithm.
- * The signing secret is retrieved from the JWT_TOKEN environment variable.
+ * The signing secret is retrieved from the JWT_SECRET environment variable.
  */
 class JWTService
 {
@@ -24,15 +24,24 @@ class JWTService
      * @param mixed $_data Data to be embedded in the token payload.
      * @return string Encoded JWT.
      */
+
+    public static int $expiration = 3600; // 1 hour
+
     public static function generate($_data)
     {
+        $iat = time();
+        $exp = time() + self::$expiration;
         $payload = [
-            "iat" => time(),
-            "exp" => time() + 3600, // 1 hour
+            "iat" => $iat,
+            "exp" => $exp,
             "data" => $_data,
         ];
 
-        return JWT::encode($payload, $_ENV["JWT_TOKEN"], "HS256");
+        return [
+            JWT::encode($payload, $_ENV["JWT_SECRET"], "HS256"),
+            $exp,
+            $iat,
+        ];
     }
 
     /**
@@ -51,7 +60,7 @@ class JWTService
     public static function decode($jwt)
     {
         try {
-            $decoded = JWT::decode($jwt, new Key($_ENV["JWT_TOKEN"], "HS256"));
+            $decoded = JWT::decode($jwt, new Key($_ENV["JWT_SECRET"], "HS256"));
             return [true, 200, $decoded];
         } catch (\Firebase\JWT\ExpiredException $e) {
             return [false, 401, "Token has expired"];

@@ -66,7 +66,7 @@ class ResponseHelper
     /**
      * Common response handler: status code + headers + JSON output + termination.
      */
-    public static function send(array $_payload, int $_code): void
+    private static function send(array $_payload, int $_code): void
     {
         http_response_code($_code);
 

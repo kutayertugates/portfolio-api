@@ -6,6 +6,7 @@ $dotenv->load();
 
 use App\Core\Router;
 use App\Services\HeaderService;
+use App\Helpers\ResponseHelper;
 
 $router = new Router();
 
@@ -18,12 +19,19 @@ $router->setCors($cors);
 // -------------------------------------------------------------------
 // Route'lar
 // -------------------------------------------------------------------
-$router->get(
-    "/",
-    fn() => App\Helpers\ResponseHelper::success(null, 200, "Ok!"),
-);
+use App\Controllers\UserController;
+
+$router->get("/", fn() => ResponseHelper::success(null, 200, "Ok!"));
+
+$router->group(["prefix" => "/users"], function (Router $r) {
+    $r->post("/", [UserController::class, "create_user"]);
+});
 
 // -------------------------------------------------------------------
 // Dispatch
 // -------------------------------------------------------------------
-$router->dispatch($_SERVER["REQUEST_METHOD"], $_SERVER["REQUEST_URI"]);
+try {
+    $router->dispatch($_SERVER["REQUEST_METHOD"], $_SERVER["REQUEST_URI"]);
+} catch (Exception $e) {
+    ResponseHelper::error("Sunucu hatası", 500);
+}
