@@ -20,8 +20,14 @@ $router->setCors($cors);
 // Route'lar
 // -------------------------------------------------------------------
 use App\Controllers\UserController;
+use App\Controllers\SecurityController;
 
 $router->get("/", fn() => ResponseHelper::success(null, 200, "Ok!"));
+
+$router->group(["prefix" => "/security"], function (Router $r) {
+    $r->post("/login", [SecurityController::class, "login"]);
+    $r->get("/me", [SecurityController::class, "me"]);
+});
 
 $router->group(["prefix" => "/users"], function (Router $r) {
     $r->post("/", [UserController::class, "create_user"]);
@@ -32,6 +38,6 @@ $router->group(["prefix" => "/users"], function (Router $r) {
 // -------------------------------------------------------------------
 try {
     $router->dispatch($_SERVER["REQUEST_METHOD"], $_SERVER["REQUEST_URI"]);
-} catch (Exception $e) {
+} catch (Throwable $e) {
     ResponseHelper::error("Sunucu hatası", 500);
 }
