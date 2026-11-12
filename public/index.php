@@ -20,6 +20,7 @@ $router->setCors($cors);
 // Route'lar
 // -------------------------------------------------------------------
 use App\Controllers\BlogController;
+use App\Controllers\ContactController;
 use App\Controllers\UserController;
 
 $router->get("/", fn() => ResponseHelper::success(null, 200, "Ok!"));
@@ -30,6 +31,10 @@ $router->group(["prefix" => "/blogs"], function (Router $r) {
 
 $router->group(["prefix" => "/user"], function (Router $r) {
     $r->get("/{id}", [UserController::class, "get_user_with_id"]);
+});
+
+$router->group(["prefix" => "/contacts"], function (Router $r) {
+    $r->post("/", [ContactController::class, "create_contact"]);
 });
 
 // -------------------------------------------------------------------

@@ -72,28 +72,28 @@ class ValidationHelper
     {
         return $this->addCheck(function ($_value, $_raw) {
             return is_string($_raw) || is_int($_raw) || is_float($_raw);
-        }, "This field must be a string.");
+        }, "Bu alan bir metin olmalıdır.");
     }
 
     public function minLength(int $_min): self
     {
         return $this->addCheck(function ($_value, $_raw) use ($_min) {
             return strlen($_value) >= $_min;
-        }, "This field must be at least " . $_min . " characters long.");
+        }, "Bu alan en az " . $_min . " karakter uzunluğunda olmalıdır.");
     }
 
     public function maxLength(int $_max): self
     {
         return $this->addCheck(function ($_value, $_raw) use ($_max) {
             return strlen($_value) <= $_max;
-        }, "This field must not exceed " . $_max . " characters.");
+        }, "Bu alan en fazla " . $_max . " karakter uzunluğunda olmalıdır.");
     }
 
     public function email(): self
     {
         return $this->addCheck(function ($_value, $_raw) {
             return filter_var($_value, FILTER_VALIDATE_EMAIL) !== false;
-        }, "Please enter a valid email address.");
+        }, "Bu alan geçerli bir e-posta adresi olmalıdır.");
     }
 
     /**
@@ -163,7 +163,7 @@ class ValidationHelper
                 // Missing/empty field: store null if optional, otherwise add an error.
                 $this->validated[$field_name] = null;
                 if ($rules["required"]) {
-                    $this->errors[$field_name] = "This field is required.";
+                    $this->errors[$field_name] = "Bu alan zorunludur.";
                 }
                 continue;
             }
