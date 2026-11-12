@@ -19,10 +19,18 @@ $router->setCors($cors);
 // -------------------------------------------------------------------
 // Route'lar
 // -------------------------------------------------------------------
+use App\Controllers\BlogController;
 use App\Controllers\UserController;
-use App\Controllers\SecurityController;
 
 $router->get("/", fn() => ResponseHelper::success(null, 200, "Ok!"));
+
+$router->group(["prefix" => "/blogs"], function (Router $r) {
+    $r->get("/", [BlogController::class, "get_all_blogs"]);
+});
+
+$router->group(["prefix" => "/user"], function (Router $r) {
+    $r->get("/{id}", [UserController::class, "get_user_with_id"]);
+});
 
 // -------------------------------------------------------------------
 // Dispatch
@@ -30,5 +38,5 @@ $router->get("/", fn() => ResponseHelper::success(null, 200, "Ok!"));
 try {
     $router->dispatch($_SERVER["REQUEST_METHOD"], $_SERVER["REQUEST_URI"]);
 } catch (Throwable $e) {
-    ResponseHelper::error("Sunucu hatası", 500);
+    ResponseHelper::error("Sunucu hatası: " . $e->getMessage(), 500);
 }
