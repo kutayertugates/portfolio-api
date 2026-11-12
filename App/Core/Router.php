@@ -3,6 +3,7 @@
 namespace App\Core;
 
 use App\Services\HeaderService;
+use App\Helpers\ResponseHelper;
 
 class Router
 {
@@ -220,13 +221,10 @@ class Router
             }
 
             header("Allow: " . implode(", ", $allowedMethods));
-            http_response_code(405);
-            echo "405 Method Not Allowed";
-            return;
+            ResponseHelper::error("İstek türü izin verilmiyor", 405);
         }
 
-        http_response_code(404);
-        echo "404 Not Found";
+        ResponseHelper::error("Sayfa bulunamadı", 404);
     }
 
     // ------------------------------------------------------------------
