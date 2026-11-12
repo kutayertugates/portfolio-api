@@ -15,6 +15,27 @@ class BlogController extends BaseController
         $this->db = Database::connect();
     }
 
+    public function get_blog_with_id($id)
+    {
+        $id = intval($id);
+        $query = "
+            SELECT
+                author_id, slug, cover_image, title, seo_title,
+                description, seo_description, content, published_at
+            FROM
+                blogpost
+            WHERE
+                status = :status AND
+                id = :blog_id;";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([
+            ":status" => "published",
+            ":blog_id" => $id,
+        ]);
+
+        ResponseHelper::success($stmt->fetch());
+    }
+
     public function get_all_blogs()
     {
         $page = intval($_GET["page"] ?? 1);
@@ -30,6 +51,12 @@ class BlogController extends BaseController
 
         $limit = min($limit, 100);
         $offset = ($page - 1) * $limit;
+
+        $blog_count = $count = $this->db
+            ->query("SELECT COUNT(*) FROM blogpost")
+            ->fetchColumn();
+
+        $max_page = ceil($blog_count / $limit);
 
         $query = "
             SELECT
@@ -47,6 +74,8 @@ class BlogController extends BaseController
         $stmt->bindValue(":status", "published");
         $stmt->execute();
 
-        ResponseHelper::success($stmt->fetchAll());
+        ResponseHelper::success($stmt->fetchAll(), [
+            "total_page" => $max_page,
+        ]);
     }
 }

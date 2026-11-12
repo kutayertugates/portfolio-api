@@ -23,6 +23,7 @@ class ResponseHelper
      */
     public static function success(
         $_data = null,
+        $_metadata = null,
         int $_code = 200,
         $message = null,
     ): void {
@@ -30,6 +31,10 @@ class ResponseHelper
 
         if ($_data !== null) {
             $payload["data"] = $_data;
+        }
+
+        if ($_metadata !== null) {
+            $payload["metadata"] = $_metadata;
         }
 
         if ($message !== null) {

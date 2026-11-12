@@ -57,6 +57,7 @@ class ContactController extends BaseController
 
         ResponseHelper::success(
             $validated,
+            null,
             201,
             "İletişim talebi oluşturuldu.",
         );
