@@ -23,13 +23,25 @@ class ContactController extends BaseController
         $validator = new ValidationHelper($body);
         $validator
             ->field("fullname")
+            ->type(ValidationHelper::TYPE_STRING)
             ->required()
-            ->string()
             ->minLength(2)
             ->maxLength(200);
-        $validator->field("email")->required()->string()->email();
-        $validator->field("subject")->required()->string()->maxLength(255);
-        $validator->field("message")->required()->string()->maxLength(65535);
+        $validator
+            ->field("email")
+            ->type(ValidationHelper::TYPE_STRING)
+            ->required()
+            ->email();
+        $validator
+            ->field("subject")
+            ->type(ValidationHelper::TYPE_STRING)
+            ->required()
+            ->maxLength(255);
+        $validator
+            ->field("message")
+            ->type(ValidationHelper::TYPE_STRING)
+            ->required()
+            ->maxLength(65535);
 
         if ($validator->fails()) {
             ResponseHelper::error(

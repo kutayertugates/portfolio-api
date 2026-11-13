@@ -18,10 +18,14 @@ namespace App\Helpers;
  */
 class ValidationHelper
 {
+    public const TYPE_STRING = "string";
+    public const TYPE_INT = "int";
+    public const TYPE_FLOAT = "float";
+
     /** Raw input to be validated (output of json_decode). */
     private array $input;
 
-    /** Field rules: field => ['required' => bool, 'checks' => [[Closure, string], ...]]. */
+    /** Field rules: field => ['required' => bool, 'default' => mixed, 'type' => string, 'checks' => [[Closure, string], ...]]. */
     private array $fields = [];
 
     /** Validation results: field => first error message. */
@@ -47,7 +51,12 @@ class ValidationHelper
     public function field(string $_field): self
     {
         if (!isset($this->fields[$_field])) {
-            $this->fields[$_field] = ["required" => false, "checks" => []];
+            $this->fields[$_field] = [
+                "required" => false,
+                "default" => null,
+                "type" => self::TYPE_STRING,
+                "checks" => [],
+            ];
         }
 
         $this->current_field = $_field;
@@ -64,17 +73,38 @@ class ValidationHelper
     }
 
     /**
-     * Requires the value to be textual (string/int/float).
-     * Numeric values received as JSON numbers (e.g. student IDs)
-     * are converted to strings; arrays, objects, and booleans are rejected.
+     * Sets a fallback value when the field is missing or empty.
      */
-    public function string(): self
+    public function default(mixed $_value): self
     {
-        return $this->addCheck(function ($_value, $_raw) {
-            return is_string($_raw) || is_int($_raw) || is_float($_raw);
-        }, "Bu alan bir metin olmalıdır.");
+        $this->fields[$this->current_field]["default"] = $_value;
+        return $this;
     }
 
+    /**
+     * Sets the field's data type for validation and normalization.
+     */
+    public function type(string $_type): self
+    {
+        if (
+            !in_array(
+                $_type,
+                [self::TYPE_STRING, self::TYPE_INT, self::TYPE_FLOAT],
+                true,
+            )
+        ) {
+            throw new \InvalidArgumentException(
+                "Unsupported field type: " . $_type,
+            );
+        }
+
+        $this->fields[$this->current_field]["type"] = $_type;
+        return $this;
+    }
+
+    /**
+     * Requires the value to have at least the specified number of characters.
+     */
     public function minLength(int $_min): self
     {
         return $this->addCheck(function ($_value, $_raw) use ($_min) {
@@ -82,6 +112,9 @@ class ValidationHelper
         }, "Bu alan en az " . $_min . " karakter uzunluğunda olmalıdır.");
     }
 
+    /**
+     * Requires the value to have no more than the specified number of characters.
+     */
     public function maxLength(int $_max): self
     {
         return $this->addCheck(function ($_value, $_raw) use ($_max) {
@@ -89,6 +122,9 @@ class ValidationHelper
         }, "Bu alan en fazla " . $_max . " karakter uzunluğunda olmalıdır.");
     }
 
+    /**
+     * Requires the value to be a valid email address.
+     */
     public function email(): self
     {
         return $this->addCheck(function ($_value, $_raw) {
@@ -126,8 +162,7 @@ class ValidationHelper
 
     /**
      * Returns the validated values.
-     * Values are trimmed and normalized to strings, so the Controller
-     * does not need to sanitize the input again.
+     * Values are normalized according to their specified field types.
      */
     public function validated(): array
     {
@@ -152,26 +187,63 @@ class ValidationHelper
         if ($this->ran) {
             return;
         }
+
         $this->ran = true;
 
         foreach ($this->fields as $field_name => $rules) {
             $raw_value = $this->input[$field_name] ?? null;
+
             $is_present =
-                $raw_value !== null && trim((string) $raw_value) !== "";
+                $raw_value !== null &&
+                (!is_string($raw_value) || trim($raw_value) !== "");
 
             if (!$is_present) {
-                // Missing/empty field: store null if optional, otherwise add an error.
-                $this->validated[$field_name] = null;
+                // Missing/empty field: use default value or null.
+                $this->validated[$field_name] = $rules["default"];
+
                 if ($rules["required"]) {
                     $this->errors[$field_name] = "Bu alan zorunludur.";
                 }
+
                 continue;
             }
 
-            // is_scalar prevents string cast warnings for array/object inputs.
-            $normalized = is_scalar($raw_value)
-                ? trim((string) $raw_value)
-                : "";
+            // Validate and normalize according to the specified type.
+            switch ($rules["type"]) {
+                case self::TYPE_STRING:
+                    if (
+                        !is_string($raw_value) &&
+                        !is_int($raw_value) &&
+                        !is_float($raw_value)
+                    ) {
+                        $this->errors[$field_name] =
+                            "Bu alan bir metin olmalıdır.";
+                        continue 2;
+                    }
+
+                    $normalized = trim((string) $raw_value);
+                    break;
+
+                case self::TYPE_INT:
+                    if (filter_var($raw_value, FILTER_VALIDATE_INT) === false) {
+                        $this->errors[$field_name] =
+                            "Bu alan bir tam sayı olmalıdır.";
+                        continue 2;
+                    }
+
+                    $normalized = (int) $raw_value;
+                    break;
+
+                case self::TYPE_FLOAT:
+                    if (!is_numeric($raw_value)) {
+                        $this->errors[$field_name] =
+                            "Bu alan sayısal bir değer olmalıdır.";
+                        continue 2;
+                    }
+
+                    $normalized = (float) $raw_value;
+                    break;
+            }
 
             foreach ($rules["checks"] as [$check, $message]) {
                 if (!$check($normalized, $raw_value)) {
