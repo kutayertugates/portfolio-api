@@ -15,9 +15,8 @@ class BlogController extends BaseController
         $this->db = Database::connect();
     }
 
-    public function get_blog_with_id($id)
+    public function get_blog_with_slug($slug)
     {
-        $id = intval($id);
         $query = "
             SELECT
                 author_id, slug, cover_image, title, seo_title,
@@ -26,11 +25,11 @@ class BlogController extends BaseController
                 blogpost
             WHERE
                 status = :status AND
-                id = :blog_id;";
+                slug = :slug;";
         $stmt = $this->db->prepare($query);
         $stmt->execute([
             ":status" => "published",
-            ":blog_id" => $id,
+            ":slug" => $slug,
         ]);
 
         ResponseHelper::success($stmt->fetch());

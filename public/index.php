@@ -27,6 +27,7 @@ $router->get("/", fn() => ResponseHelper::success(null, 200, "Ok!"));
 
 $router->group(["prefix" => "/blogs"], function (Router $r) {
     $r->get("/", [BlogController::class, "get_all_blogs"]);
+    $r->get("/slug/{slug}", [BlogController::class, "get_blog_with_slug"]);
 });
 
 $router->group(["prefix" => "/user"], function (Router $r) {
