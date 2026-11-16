@@ -11,9 +11,20 @@ use App\Helpers\ResponseHelper;
 $router = new Router();
 
 $cors = new HeaderService();
-$cors->addAllowedMethods(["GET", "POST", "PUT", "PATCH", "DELETE"]);
-$cors->addAllowedHeaders(["Authorization", "X-Requested-With"]);
-$cors->allowed_host[] = "https://app.example.com";
+$cors->setContentType("application/json");
+$cors->setAllowedMethods(["GET", "POST", "PUT", "PATCH", "DELETE"]);
+$cors->setCache(false);
+$cors->setAllowedHeaders(["Content-Type", "Authorization"]);
+
+if (strtolower($_ENV["DEBUG"]) === "true") {
+    $cors->setAllowedHosts(["http://localhost:5173"]);
+} else {
+    $cors->setAllowedHosts([
+        "https://kutayertug.com",
+        "https://www.kutayertug.com",
+    ]);
+}
+
 $router->setCors($cors);
 
 // -------------------------------------------------------------------
@@ -23,7 +34,7 @@ use App\Controllers\BlogController;
 use App\Controllers\ContactController;
 use App\Controllers\UserController;
 
-$router->get("/", fn() => ResponseHelper::success(null, 200, "Ok!"));
+$router->get("/", fn() => ResponseHelper::success(null, null, 200, "Ok!"));
 
 $router->group(["prefix" => "/blogs"], function (Router $r) {
     $r->get("/", [BlogController::class, "get_all_blogs"]);

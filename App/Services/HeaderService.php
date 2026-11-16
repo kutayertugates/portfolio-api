@@ -9,12 +9,12 @@ namespace App\Services;
  * and basic security headers.
  *
  * CORS is restricted to explicitly allowed origins.
- * No origin is allowed unless it is present in the allowed_host list.
+ * No origin is allowed unless it is present in the allowed_hosts list.
  */
 class HeaderService
 {
     /** List of origins permitted to access this API. */
-    public array $allowed_host = ["http://localhost:5173"];
+    public array $allowed_hosts = ["http://localhost:5173"];
 
     /** Response Content-Type header value. */
     public string $content_type = "";
@@ -57,6 +57,11 @@ class HeaderService
         $this->content_type = $type_;
     }
 
+    public function setAllowedHosts(array $hosts_): void
+    {
+        $this->allowed_hosts = $hosts_;
+    }
+
     /** Replaces the list of allowed HTTP methods. */
     public function setAllowedMethods(array $methods_): void
     {
@@ -90,15 +95,24 @@ class HeaderService
      *
      * Accepts either a single method string or an array of methods.
      */
+    public function addAllowedHosts(array|string $hosts_): void
+    {
+        if (is_string($hosts_)) {
+            array_push($this->allowed_hosts, $hosts_);
+            return;
+        }
+
+        $this->allowed_hosts = array_merge($this->allowed_hosts, $hosts_);
+    }
+
     public function addAllowedMethods(array|string $methods_): void
     {
         if (is_string($methods_)) {
             array_push($this->allowed_methods, $methods_);
-        } else {
-            foreach ($methods_ as $m) {
-                array_push($this->allowed_methods, $m);
-            }
+            return;
         }
+
+        $this->allowed_methods = array_merge($this->allowed_methods, $methods_);
     }
 
     /**
@@ -110,11 +124,10 @@ class HeaderService
     {
         if (is_string($headers_)) {
             array_push($this->allowed_headers, $headers_);
-        } else {
-            foreach ($headers_ as $h) {
-                array_push($this->allowed_headers, $h);
-            }
+            return;
         }
+
+        $this->allowed_headers = array_merge($this->allowed_headers, $headers_);
     }
 
     // ------------------------------------------------------------------
@@ -153,7 +166,7 @@ class HeaderService
 
         // Check whether the request origin is explicitly allowed.
         $origin = $_SERVER["HTTP_ORIGIN"] ?? "";
-        if (in_array($origin, $this->allowed_host, true)) {
+        if (in_array($origin, $this->allowed_hosts, true)) {
             header("Access-Control-Allow-Origin: $origin");
         }
 
